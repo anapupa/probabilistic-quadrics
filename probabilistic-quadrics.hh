@@ -44,6 +44,10 @@
 
 #include <type_traits>
 
+#ifndef Q_API
+#define Q_API
+#endif
+
 namespace pq
 {
 // ============== Forward Declarations ==============
@@ -171,19 +175,19 @@ struct math
     using mat3 = Mat3;
 
     template <class MatT = Mat3>
-    static auto get_impl(MatT& m, int x, int y, int) -> decltype(m[x][y])
+    static auto Q_API get_impl(MatT& m, int x, int y, int) -> decltype(m[x][y])
     {
         return m[x][y];
     }
     template <class MatT = Mat3> // workaround for Eigen matrices
-    static auto get_impl(MatT& m, int x, int y, char) -> decltype(m(y, x))
+    static auto Q_API get_impl(MatT& m, int x, int y, char) -> decltype(m(y, x))
     {
         return m(y, x);
     }
-    static scalar_t& get(Mat3& m, int x, int y) { return get_impl(m, x, y, 0); }
-    static scalar_t const& get(Mat3 const& m, int x, int y) { return get_impl(m, x, y, 0); }
+    static scalar_t& Q_API get(Mat3& m, int x, int y) { return get_impl(m, x, y, 0); }
+    static scalar_t const& Q_API get(Mat3 const& m, int x, int y) { return get_impl(m, x, y, 0); }
 
-    static pos3 make_pos(scalar_t x, scalar_t y, scalar_t z)
+    static pos3 Q_API make_pos(scalar_t x, scalar_t y, scalar_t z)
     {
         pos3 p;
         p[0] = x;
@@ -192,7 +196,7 @@ struct math
         return p;
     }
 
-    static vec3 make_vec(scalar_t x, scalar_t y, scalar_t z)
+    static vec3 Q_API make_vec(scalar_t x, scalar_t y, scalar_t z)
     {
         vec3 v;
         v[0] = x;
@@ -201,7 +205,7 @@ struct math
         return v;
     }
 
-    static vec3 to_vec(pos3 const& p)
+    static vec3 Q_API to_vec(pos3 const& p)
     {
         vec3 v;
         v[0] = p[0];
@@ -210,7 +214,7 @@ struct math
         return v;
     }
 
-    static mat3 make_identity()
+    static mat3 Q_API make_identity()
     {
         mat3 m;
 
@@ -229,7 +233,7 @@ struct math
         return m;
     }
 
-    static vec3 cross(vec3 const& a, vec3 const& b)
+    static vec3 Q_API cross(vec3 const& a, vec3 const& b)
     {
         return math::make_vec(a[1] * b[2] - a[2] * b[1], //
                               a[2] * b[0] - a[0] * b[2], //
@@ -237,12 +241,12 @@ struct math
     }
 
     template <class A, class B> // can be pos3 or vec3
-    static scalar_t dot(A const& a, B const& b)
+    static scalar_t Q_API dot(A const& a, B const& b)
     {
         return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
     }
 
-    static scalar_t trace_of_product(mat3 const& A, mat3 const& B)
+    static scalar_t Q_API trace_of_product(mat3 const& A, mat3 const& B)
     {
         // trace(A * B)
         auto r = ScalarT(0);
@@ -252,7 +256,11 @@ struct math
         return r;
     }
 
-    static mat3 self_outer_product(vec3 const& v)
+    static scalar_t Q_API frobenius_inner_product(mat3 const& A) {
+        return trace_of_product(A, A);
+    }
+
+    static mat3 Q_API self_outer_product(vec3 const& v)
     {
         auto const a = v[0];
         auto const b = v[1];
@@ -275,7 +283,7 @@ struct math
         return M;
     }
 
-    static mat3 cross_product_squared_transpose(vec3 const& v)
+    static mat3 Q_API cross_product_squared_transpose(vec3 const& v)
     {
         auto const a = v[0];
         auto const b = v[1];
@@ -301,7 +309,7 @@ struct math
         return M;
     }
 
-    static mat3 cross_interference_matrix(mat3 const& A, mat3 const& B)
+    static mat3 Q_API cross_interference_matrix(mat3 const& A, mat3 const& B)
     {
         mat3 m;
 
@@ -331,7 +339,7 @@ struct math
         return m;
     }
 
-    static mat3 first_order_tri_quad(vec3 const& a, mat3 const& sigma)
+    static mat3 Q_API first_order_tri_quad(vec3 const& a, mat3 const& sigma)
     {
         mat3 M;
 
@@ -358,6 +366,158 @@ struct math
         return M;
     }
 };
+
+template <class Mat3>
+struct math_pq {
+    // make types available as math::type
+    using scalar_t = double;
+    using pos3 = double3;
+    using vec3 = double3;
+    using mat3 = Mat3;
+
+    template <class MatT = Mat3>
+    static auto Q_API get_impl(MatT& m, int x, int y, int) -> decltype(m[x][y])
+    {
+        return m[x][y];
+    }
+    template <class MatT = Mat3> // workaround for Eigen matrices
+    static auto Q_API get_impl(MatT& m, int x, int y, char) -> decltype(m(y, x))
+    {
+        return m(y, x);
+    }
+    static scalar_t& Q_API get(Mat3& m, int x, int y) { return get_impl(m, x, y, 0); }
+    static scalar_t const& Q_API get(Mat3 const& m, int x, int y) { return get_impl(m, x, y, 0); }
+
+
+    static pos3 Q_API make_pos(scalar_t x, scalar_t y, scalar_t z) {  return make_double3(x, y, z); }
+
+    static vec3 Q_API make_vec(scalar_t x, scalar_t y, scalar_t z) {  return make_double3(x, y, z); }
+
+    static vec3 Q_API to_vec(pos3 const& p) { return p; }
+
+
+    static vec3 Q_API cross(vec3 const& a, vec3 const& b) {
+        return math_pq::make_vec(a.y* b.z - a.z* b.y, //
+                              a.z* b.x - a.x* b.z, //
+                              a.x* b.y - a.y* b.x);
+    }
+
+    template <class A, class B> // can be pos3 or vec3
+    static scalar_t Q_API dot(A const& a, B const& b) {
+        return a.x* b.x + a.y* b.y + a.z* b.z;
+    }
+
+    static mat3 Q_API self_outer_product(vec3 const& v) {
+        auto const a = v.x;
+        auto const b = v.y;
+        auto const c = v.z;
+
+        mat3 M;
+        math_pq::get(M, 0, 0) = a * a;
+        math_pq::get(M, 1, 1) = b * b;
+        math_pq::get(M, 2, 2) = c * c;
+
+        math_pq::get(M, 1, 0) = a * b;
+        math_pq::get(M, 2, 0) = a * c;
+        math_pq::get(M, 2, 1) = b * c;
+
+        math_pq::get(M, 0, 1) = a * b;
+        math_pq::get(M, 0, 2) = a * c;
+        math_pq::get(M, 1, 2) = b * c;
+
+        return M;
+    }
+
+    static mat3 Q_API cross_product_squared_transpose(vec3 const& v) {
+        auto const a = v.x;
+        auto const b = v.y;
+        auto const c = v.z;
+        auto const a2 = a * a;
+        auto const b2 = b * b;
+        auto const c2 = c * c;
+
+        mat3 M;
+
+        math_pq::get(M, 0, 0) = b2 + c2;
+        math_pq::get(M, 1, 1) = a2 + c2;
+        math_pq::get(M, 2, 2) = a2 + b2;
+
+        math_pq::get(M, 1, 0) = -a * b;
+        math_pq::get(M, 2, 0) = -a * c;
+        math_pq::get(M, 2, 1) = -b * c;
+
+        math_pq::get(M, 0, 1) = -a * b;
+        math_pq::get(M, 0, 2) = -a * c;
+        math_pq::get(M, 1, 2) = -b * c;
+
+        return M;
+    }
+
+    static mat3 Q_API cross_interference_matrix(mat3 const& A, mat3 const& B) {
+        mat3 m;
+
+        auto constexpr x = 0;
+        auto constexpr y = 1;
+        auto constexpr z = 2;
+
+        auto const cxx =math_pq::get(A, y, z) *math_pq::get(B, y, z);
+        auto const cyy =math_pq::get(A, x, z) *math_pq::get(B, x, z);
+        auto const czz =math_pq::get(A, x, y) *math_pq::get(B, x, y);
+
+       math_pq::get(m, x, x) =
+           math_pq::get(A, y, y) *math_pq::get(B, z, z) - cxx - cxx +math_pq::get(A, z, z) *math_pq::get(B, y, y);
+       math_pq::get(m, y, y) =
+           math_pq::get(A, x, x) *math_pq::get(B, z, z) - cyy - cyy +math_pq::get(A, z, z) *math_pq::get(B, x, x);
+       math_pq::get(m, z, z) =
+           math_pq::get(A, x, x) *math_pq::get(B, y, y) - czz - czz +math_pq::get(A, y, y) *math_pq::get(B, x, x);
+
+       math_pq::get(m, x, y) = -math_pq::get(A, x, y) *math_pq::get(B, z, z) +math_pq::get(A, x, z) *math_pq::get(B, y, z) +
+                            math_pq::get(A, y, z) *math_pq::get(B, x, z) -math_pq::get(A, z, z) *math_pq::get(B, x, y);
+       math_pq::get(m, x, z) =math_pq::get(A, x, y) *math_pq::get(B, y, z) -math_pq::get(A, x, z) *math_pq::get(B, y, y) -
+                            math_pq::get(A, y, y) *math_pq::get(B, x, z) +math_pq::get(A, y, z) *math_pq::get(B, x, y);
+       math_pq::get(m, y, z) = -math_pq::get(A, x, x) *math_pq::get(B, y, z) +math_pq::get(A, x, y) *math_pq::get(B, x, z) +
+                            math_pq::get(A, x, z) *math_pq::get(B, x, y) -math_pq::get(A, y, z) *math_pq::get(B, x, x);
+
+       math_pq::get(m, y, x) =math_pq::get(m, x, y);
+       math_pq::get(m, z, x) =math_pq::get(m, x, z);
+       math_pq::get(m, z, y) =math_pq::get(m, y, z);
+
+        return m;
+    }
+
+    static mat3 Q_API first_order_tri_quad(vec3 const& a, mat3 const& sigma) {
+        mat3 M;
+
+        auto const xx = a.x* a.x;
+        auto const xy = a.x* a.y;
+        auto const xz = a.x* a.z;
+        auto const yy = a.y* a.y;
+        auto const yz = a.y* a.z;
+        auto const zz = a.z* a.z;
+
+        auto const two = scalar_t(2);
+
+       math_pq::get(M, 0, 0) =
+            -math_pq::get(sigma, 1, 1) * zz + two *math_pq::get(sigma, 1, 2) * yz -math_pq::get(sigma, 2, 2) * yy;
+       math_pq::get(M, 0, 1) =math_pq::get(sigma, 0, 1) * zz -math_pq::get(sigma, 0, 2) * yz -math_pq::get(sigma, 1, 2) * xz +
+                            math_pq::get(sigma, 2, 2) * xy;
+       math_pq::get(M, 0, 2) = -math_pq::get(sigma, 0, 1) * yz +math_pq::get(sigma, 0, 2) * yy +math_pq::get(sigma, 1, 1) * xz -
+                            math_pq::get(sigma, 1, 2) * xy;
+       math_pq::get(M, 1, 1) =
+            -math_pq::get(sigma, 0, 0) * zz + two *math_pq::get(sigma, 0, 2) * xz -math_pq::get(sigma, 2, 2) * xx;
+       math_pq::get(M, 1, 2) =math_pq::get(sigma, 0, 0) * yz -math_pq::get(sigma, 0, 1) * xz -math_pq::get(sigma, 0, 2) * xy +
+                            math_pq::get(sigma, 1, 2) * xx;
+       math_pq::get(M, 2, 2) =
+            -math_pq::get(sigma, 0, 0) * yy + two * math_pq::get(sigma, 0, 1) * xy - math_pq::get(sigma, 1, 1) * xx;
+
+        math_pq::get(M, 1, 0) = math_pq::get(M, 0, 1);
+        math_pq::get(M, 2, 0) = math_pq::get(M, 0, 2);
+        math_pq::get(M, 2, 1) = math_pq::get(M, 1, 2);
+
+        return M;
+    }
+};
+
 
 // ============== Quadric Class ==============
 
@@ -389,7 +549,7 @@ public:
 public:
     constexpr quadric() = default;
 
-    [[nodiscard]] static quadric from_coefficients(
+    [[nodiscard]] static quadric Q_API from_coefficients(
         scalar_t A00, scalar_t A01, scalar_t A02, scalar_t A11, scalar_t A12, scalar_t A22, scalar_t b0, scalar_t b1, scalar_t b2, scalar_t c)
     {
         quadric q;
@@ -405,7 +565,7 @@ public:
         q.c = c;
         return q;
     }
-    [[nodiscard]] static quadric from_coefficients(mat3 const& A, vec3 const& b, scalar_t c)
+    [[nodiscard]] static quadric Q_API from_coefficients(mat3 const& A, vec3 const& b, scalar_t c)
     {
         quadric q;
         q.A00 = math::get(A, 0, 0);
@@ -414,26 +574,26 @@ public:
         q.A11 = math::get(A, 1, 1);
         q.A12 = math::get(A, 1, 2);
         q.A22 = math::get(A, 2, 2);
-        q.b0 = b[0];
-        q.b1 = b[1];
-        q.b2 = b[2];
+        q.b0 = b.x;
+        q.b1 = b.y;
+        q.b2 = b.z;
         q.c = c;
         return q;
     }
 
-    [[nodiscard]] static quadric point_quadric(pos3 const& p)
+    [[nodiscard]] static quadric Q_API point_quadric(pos3 const& p)
     {
         auto const v = math::to_vec(p);
         return quadric::from_coefficients(math::make_identity(), v, math::dot(v, v));
     }
 
-    [[nodiscard]] static quadric plane_quadric(pos3 const& p, vec3 const& n)
+    [[nodiscard]] static quadric Q_API plane_quadric(pos3 const& p, vec3 const& n)
     {
         auto const d = math::dot(p, n);
         return quadric::from_coefficients(math::self_outer_product(n), n * d, d * d);
     }
 
-    [[nodiscard]] static quadric probabilistic_plane_quadric(pos3 const& mean_p, vec3 const& mean_n, scalar_t stddev_p, scalar_t stddev_n)
+    [[nodiscard]] static quadric Q_API probabilistic_plane_quadric(pos3 const& mean_p, vec3 const& mean_n, scalar_t stddev_p, scalar_t stddev_n)
     {
         auto const p = math::to_vec(mean_p);
         auto const sn2 = stddev_n * stddev_n;
@@ -451,7 +611,7 @@ public:
         return quadric::from_coefficients(A, b, c);
     }
 
-    [[nodiscard]] static quadric probabilistic_plane_quadric(pos3 const& mean_p, vec3 const& mean_n, mat3 const& sigma_p, mat3 const& sigma_n)
+    [[nodiscard]] static quadric Q_API probabilistic_plane_quadric(pos3 const& mean_p, vec3 const& mean_n, mat3 const& sigma_p, mat3 const& sigma_n)
     {
         auto const p = math::to_vec(mean_p);
         auto const d = math::dot(mean_p, mean_n);
@@ -463,7 +623,7 @@ public:
         return quadric::from_coefficients(A, b, c);
     }
 
-    [[nodiscard]] static quadric triangle_quadric(pos3 const& p, pos3 const& q, pos3 const& r)
+    [[nodiscard]] static quadric Q_API triangle_quadric(pos3 const& p, pos3 const& q, pos3 const& r)
     {
         auto const vp = math::to_vec(p);
         auto const vq = math::to_vec(q);
@@ -479,7 +639,7 @@ public:
         return quadric::from_coefficients(math::self_outer_product(xsum), xsum * det, det * det);
     }
 
-    [[nodiscard]] static quadric probabilistic_triangle_quadric(pos3 const& mean_p, //
+    [[nodiscard]] static quadric Q_API probabilistic_triangle_quadric(pos3 const& mean_p, //
                                                                 pos3 const& mean_q,
                                                                 pos3 const& mean_r,
                                                                 scalar_t stddev)
@@ -531,7 +691,7 @@ public:
         return quadric::from_coefficients(A, b, c);
     }
 
-    [[nodiscard]] static quadric probabilistic_triangle_quadric(pos3 const& mean_p, //
+    [[nodiscard]] static quadric Q_API probabilistic_triangle_quadric(pos3 const& mean_p, //
                                                                 pos3 const& mean_q,
                                                                 pos3 const& mean_r,
                                                                 mat3 const& sigma_p,
@@ -597,7 +757,7 @@ public:
 
     // aggregate getters
 public:
-    constexpr mat3 const A() const
+    constexpr mat3 const Q_API A() const
     {
         mat3 m;
         math::get(m, 0, 0) = A00;
@@ -611,11 +771,12 @@ public:
         math::get(m, 2, 2) = A22;
         return m;
     }
-    constexpr vec3 const b() const { return math::make_vec(b0, b1, b2); }
+
+    constexpr vec3 const Q_API b() const { return math::make_vec(b0, b1, b2); }
 
     // functions
 public:
-    [[nodiscard]] pos3 minimizer() const
+    [[nodiscard]] pos3 Q_API minimizer() const
     {
         // Returns a point minimizing this quadric
         // Solving Ax = r with some common subexpressions precomputed
@@ -652,10 +813,23 @@ public:
         return math::make_pos(nom0 * denom, nom1 * denom, nom2 * denom);
     }
 
+    [[nodiscard]] double Q_API constraint_minimizer(const pos3& p, const vec3& n) const{
+        // Returns a point minimizing this quadric
+        // Solving Ax = r with some common subexpressions precomputed
+        vec3 Ax = math::make_vec(A00 * n[0] + A01 * n[1] + A02 * n[2], //
+                                 A01 * n[0] + A11 * n[1] + A12 * n[2], //
+                                 A02 * n[0] + A12 * n[1] + A22 * n[2]);
+        double lambda1 = -( math::dot(p, Ax) - (n[0] * b0 + n[1] * b1 + n[2] * b2));
+        double lambda2 = math::dot(n, Ax);
+//        printf("%f/%f \t== \t%f\n", lambda1, lambda2, (lambda1/lambda2));
+
+        return (lambda1/lambda2);
+    }
+
     // operators
 public:
     /// Residual L2 error as given by x^T A x - 2 r^T x + c
-    scalar_t operator()(pos3 const& p) const
+    scalar_t Q_API operator()(pos3 const& p) const
     {
         vec3 Ax = math::make_vec(A00 * p[0] + A01 * p[1] + A02 * p[2], //
                                  A01 * p[0] + A11 * p[1] + A12 * p[2], //
@@ -666,9 +840,9 @@ public:
                + c;                                                // + c
     }
 
-    scalar_t operator()(scalar_t x, scalar_t y, scalar_t z) const { return operator()(math::make_pos(x, y, z)); }
+    scalar_t Q_API operator()(scalar_t x, scalar_t y, scalar_t z) const { return operator()(math::make_pos(x, y, z)); }
 
-    quadric& operator+=(quadric const& rhs)
+    quadric& Q_API operator+=(quadric const& rhs)
     {
         A00 += rhs.A00;
         A01 += rhs.A01;
@@ -686,7 +860,7 @@ public:
         return *this;
     }
 
-    quadric& operator-=(quadric const& rhs)
+    quadric& Q_API operator-=(quadric const& rhs)
     {
         A00 -= rhs.A00;
         A01 -= rhs.A01;
@@ -704,7 +878,7 @@ public:
         return *this;
     }
 
-    quadric& operator*=(scalar_t const& s)
+    quadric& Q_API operator*=(scalar_t const& s)
     {
         A00 *= s;
         A01 *= s;
@@ -722,9 +896,9 @@ public:
         return *this;
     }
 
-    quadric operator+() const { return *this; }
+    quadric Q_API operator+() const { return *this; }
 
-    quadric operator-() const
+    quadric Q_API operator-() const
     {
         quadric q;
         q.A00 = -A00;
@@ -742,37 +916,37 @@ public:
         return q;
     }
 
-    quadric& operator/=(scalar_t const& s) { return operator*=(scalar_t(1) / s); }
+    quadric& Q_API operator/=(scalar_t const& s) { return operator*=(scalar_t(1) / s); }
 
-    quadric operator+(quadric const& b) const
+    quadric Q_API operator+(quadric const& b) const
     {
         auto r = *this; // copy
         r += b;
         return r;
     }
 
-    quadric operator-(quadric const& b) const
+    quadric Q_API operator-(quadric const& b) const
     {
         auto r = *this; // copy
         r -= b;
         return r;
     }
 
-    quadric operator*(scalar_t const& b) const
+    quadric Q_API operator*(scalar_t const& b) const
     {
         auto r = *this; // copy
         r *= b;
         return r;
     }
 
-    quadric operator/(scalar_t const& b) const
+    quadric Q_API operator/(scalar_t const& b) const
     {
         auto r = *this; // copy
         r /= b;
         return r;
     }
 
-    friend quadric operator*(scalar_t const& s, quadric const& q) { return q * s; }
+    friend quadric Q_API  operator*(scalar_t const& s, quadric const& q) { return q * s; }
 };
 
 } // namespace pq

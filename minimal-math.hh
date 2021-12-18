@@ -9,6 +9,10 @@
 ///   minimal_math<float>
 ///   minimal_math<double>
 
+#ifndef Q_API
+#define Q_API
+#endif
+
 namespace pq
 {
 // ============== Forward Declarations ==============
@@ -41,8 +45,8 @@ struct vec<3, ScalarT>
     ScalarT y = ScalarT(0);
     ScalarT z = ScalarT(0);
 
-    ScalarT& operator[](int i) { return (&x)[i]; }
-    ScalarT const& operator[](int i) const { return (&x)[i]; }
+    ScalarT& Q_API operator[](int i) { return (&x)[i]; }
+    ScalarT const& Q_API operator[](int i) const { return (&x)[i]; }
 };
 
 template <class ScalarT>
@@ -52,8 +56,8 @@ struct pos<3, ScalarT>
     ScalarT y = ScalarT(0);
     ScalarT z = ScalarT(0);
 
-    ScalarT& operator[](int i) { return (&x)[i]; }
-    ScalarT const& operator[](int i) const { return (&x)[i]; }
+    ScalarT& Q_API operator[](int i) { return (&x)[i]; }
+    ScalarT const& Q_API operator[](int i) const { return (&x)[i]; }
 };
 
 template <int C, int R, class ScalarT>
@@ -63,21 +67,21 @@ private:
     vec<R, ScalarT> m[C];
 
 public:
-    vec<R, ScalarT>& operator[](int i) { return m[i]; }
-    vec<R, ScalarT> const& operator[](int i) const { return m[i]; }
+    vec<R, ScalarT>& Q_API operator[](int i) { return m[i]; }
+    vec<R, ScalarT> const& Q_API operator[](int i) const { return m[i]; }
 };
 
 
 // ============== Operations ==============
 
 template <class T>
-vec<3, T> operator*(vec<3, T> const& v, T const& s)
+vec<3, T> Q_API operator*(vec<3, T> const& v, T const& s)
 {
     return {v.x * s, v.y * s, v.z * s};
 }
 
 template <class T>
-vec<3, T> operator*(mat<3, 3, T> const& A, vec<3, T> const& b)
+vec<3, T> Q_API operator*(mat<3, 3, T> const& A, vec<3, T> const& b)
 {
     return {
         A[0][0] * b.x + A[1][0] * b.y + A[2][0] * b.z, //
@@ -87,7 +91,7 @@ vec<3, T> operator*(mat<3, 3, T> const& A, vec<3, T> const& b)
 }
 
 template <class T>
-mat<3, 3, T> operator*(mat<3, 3, T> m, T const& s)
+mat<3, 3, T> Q_API operator*(mat<3, 3, T> m, T const& s)
 {
     m[0] = m[0] * s;
     m[1] = m[1] * s;
@@ -96,19 +100,19 @@ mat<3, 3, T> operator*(mat<3, 3, T> m, T const& s)
 }
 
 template <class T>
-vec<3, T> operator+(vec<3, T> const& a, vec<3, T> const& b)
+vec<3, T> Q_API operator+(vec<3, T> const& a, vec<3, T> const& b)
 {
     return {a.x + b.x, a.y + b.y, a.z + b.z};
 }
 
 template <class T>
-vec<3, T> operator-(vec<3, T> const& a, vec<3, T> const& b)
+vec<3, T> Q_API operator-(vec<3, T> const& a, vec<3, T> const& b)
 {
     return {a.x - b.x, a.y - b.y, a.z - b.z};
 }
 
 template <class T>
-mat<3, 3, T> operator+(mat<3, 3, T> const& a, mat<3, 3, T> const& b)
+mat<3, 3, T> Q_API operator+(mat<3, 3, T> const& a, mat<3, 3, T> const& b)
 {
     mat<3, 3, T> r;
     r[0] = a[0] + b[0];
@@ -118,7 +122,7 @@ mat<3, 3, T> operator+(mat<3, 3, T> const& a, mat<3, 3, T> const& b)
 }
 
 template <class T>
-mat<3, 3, T> operator-(mat<3, 3, T> const& a, mat<3, 3, T> const& b)
+mat<3, 3, T> Q_API operator-(mat<3, 3, T> const& a, mat<3, 3, T> const& b)
 {
     mat<3, 3, T> r;
     r[0] = a[0] - b[0];
